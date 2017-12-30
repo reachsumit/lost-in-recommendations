@@ -39,6 +39,11 @@
   font: 10px sans-serif;
 }
 
+.wrapper {
+    border:1px solid #000;
+    display:inline-block;
+}
+
 </style>
 </head>
 <body id="page-top" class="index">
@@ -51,17 +56,28 @@
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
                     <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
                 </button>
-                <a class="navbar-brand" href="#page-top">Start Bootstrap</a>
+                <a class="navbar-brand" href="#page-top">Let's Explore!</a>
+				<div class="wrapper" style="float: right;padding: 5px;border: 2px;margin-top: 8px;margin-right: 5px;font-size: 17px;margin-left: 300px;display:inline-block;">
+				
+				<input placeholder="Search.." type="search" id="query" onsearch="runQuery()">
+				<button onclick="runQuery()" id="searchbutton"><i class="fa fa-search"></i></button>
+				<select style="height: 34px;width: 240px;margin-left: 360px;" id="website" onchange="changeWebsite()">
+						<option>Wikipedia</option>
+						<option>Youtube</option>
+					</select>
+				</div>
             </div>
-
+			<div class="topnav"></div>
             <!-- Collect the nav links, forms, and other content for toggling -->
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+			
+			<!--
                 <ul class="nav navbar-nav navbar-right">
                     <li class="hidden">
                         <a href="#page-top"></a>
                     </li>
                     <li class="page-scroll">
-                        <a href="#portfolio">Portfolio</a>
+                        <a href="#portfolio">What</a>
                     </li>
                     <li class="page-scroll">
                         <a href="#about">About</a>
@@ -70,11 +86,35 @@
                         <a href="#contact">Contact</a>
                     </li>
                 </ul>
+				-->
             </div>
             <!-- /.navbar-collapse -->
         </div>
         <!-- /.container-fluid -->
     </nav>
+	<script>
+	var rQuery = document.getElementById("query");
+	rQuery.addEventListener("keyup", function(event) {
+    event.preventDefault();
+    if (event.keyCode === 13) {
+        document.getElementById("searchbutton").click();
+    }
+	});
+	function changeWebsite(){
+		var site = document.getElementById("website").value;
+		console.log("Website changed to "+site)
+		$.post( "/switch", {
+			javascript_data: site 
+		});
+	}
+	function runQuery(){
+		var sQuery = document.getElementById("query").value;
+		console.log("You searched for: "+sQuery)
+		$.post( "/search", {
+			javascript_data: sQuery 
+		});
+	}
+	</script>
 
     <!-- Header -->
     <header>
@@ -106,15 +146,15 @@
 				  var node = svg.selectAll(".node")
 					  .data(json.nodes)
 					.enter().append("g")
-					  .attr("class", "nodeji")
+					  .attr("class", "nodes")
 					  .call(force.drag);
 				  node.append("image")
-					  .attr("xlink:href", "http://icons.iconseeker.com/ico/popular-sites/wikipedia-globe.ico")
+					  .attr("xlink:href", "{{ url_for('static', filename='icons/yt.ico') }}")
 					  .attr("x", -8)
 					  .attr("y", -8)
 					  .attr("class", "wiki")
-					  .attr("width", 36)
-					  .attr("height", 36);
+					  .attr("width", 40)
+					  .attr("height", 40);
 					  
 				  node.append("text")
 					  .attr("dx", 12)
@@ -142,19 +182,25 @@
         <div class="footer-below">
                         <ul class="list-inline">
                             <li>
-                                <a href="#" class="btn-social btn-outline"><i class="fa fa-fw fa-facebook"></i></a>
+                                <a href="https://www.facebook.com/sam.sumit" class="btn-social btn-outline"><i class="fa fa-fw fa-facebook"></i></a>
                             </li>
                             <li>
-                                <a href="#" class="btn-social btn-outline"><i class="fa fa-fw fa-google-plus"></i></a>
+                                <a href="https://www.instagram.com/_sirpunch_/" class="btn-social btn-outline"><i class="fa fa-fw fa-instagram"></i></a>
                             </li>
                             <li>
                                 <a href="#" class="btn-social btn-outline"><i class="fa fa-fw fa-twitter"></i></a>
                             </li>
                             <li>
-                                <a href="#" class="btn-social btn-outline"><i class="fa fa-fw fa-linkedin"></i></a>
+                                <a href="" class="btn-social btn-outline"><i class="fa fa-fw fa-linkedin"></i></a>
                             </li>
                             <li>
-                                <a href="#" class="btn-social btn-outline"><i class="fa fa-fw fa-dribbble"></i></a>
+                                <a href="https://medium.com/@sumit.arora" class="btn-social btn-outline"><i class="fa fa-fw fa-medium"></i></a>
+                            </li>
+							<li>
+                                <a href="#" class="btn-social btn-outline"><i class="fa fa-fw fa-github"></i></a>
+                            </li>
+							<li>
+                                <a href="mailto:sam.sumitkumar@gmail.com" class="btn-social btn-outline"><i class="fw fa-fw fa-medium"></i></a>
                             </li>
                         </ul>
         </div>
