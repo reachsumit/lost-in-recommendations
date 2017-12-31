@@ -161,8 +161,8 @@
 				svg.selectAll("*").remove();
 				var force = d3.layout.force()
 					.gravity(0.05)
-					.distance(100)
-					.charge(-100)
+					.distance(200)
+					.charge(-500)
 					.size([width, height]);
 				<!-- var x = "{{ jsdata }}".replace(/&#39;/g,'"') -->
 				<!-- var json = JSON.parse(x) -->
@@ -185,8 +185,8 @@
 					  .attr("x", -8)
 					  .attr("y", -8)
 					  .attr("class", "wiki")
-					  .attr("width", 40)
-					  .attr("height", 40);
+					  .attr("width", 50)
+					  .attr("height", 50);
 					  
 				  node.append("text")
 					  .attr("dx", 12)

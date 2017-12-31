@@ -15,8 +15,8 @@ def get_recommendations_yt(soup):
         myl = soup.select('li[class="video-list-item related-list-item show-video-time related-list-item-compact-video"] a')
         # skip by one item to avoid duplicate entry
         for item in myl[::2]:
-		    # keep title length to 30 characters to maintain readability
-            recommendations.append([item.get("title")[:30],"https://www.youtube.com"+item.get("href")])
+		    # keep title length to 45 characters to maintain readability
+            recommendations.append([item.get("title")[:45],"https://www.youtube.com"+item.get("href")])
     except Exception as e:
         print(e)
         return -1
@@ -84,14 +84,18 @@ def appends_nodes_and_links(parent_url,recommendations):
             continue
         nodes_dict["nodes"].append(node)
 
-    # find parent's index
-    parent_index = nodes_dict['nodes'].index(dict([item for item in nodes_dict['nodes'] if item['url']==parent_url][0]))
-    # connect all children with this parent index
-    for idx, item in enumerate(nodes_dict['nodes']):
-        if idx == parent_index:
-            continue
-        else:
-            links_dict['links'].append({"source":idx,"target":parent_index})
+    try:
+        # find parent's index
+        parent_index = nodes_dict['nodes'].index(dict([item for item in nodes_dict['nodes'] if item['url']==parent_url][0]))
+        # connect all children with this parent index
+        for idx, item in enumerate(nodes_dict['nodes']):
+            if idx == parent_index:
+                continue
+            else:
+                links_dict['links'].append({"source":idx,"target":parent_index})
+    except Exception as e:
+        print(e)
+        return -1
 
 def crate_nodes_and_links(parent_title,parent_url,recommendations):
     # clear any prior nodes information
@@ -120,15 +124,19 @@ def crate_nodes_and_links(parent_title,parent_url,recommendations):
     
     # clear any prior links information
     links_dict = {"links":[]}
-    # find parent's index
-    parent_index = nodes_dict['nodes'].index(dict([item for item in nodes_dict['nodes'] if item['url']==parent_url][0]))
-    # connect all children with this parent index
-    for idx, item in enumerate(nodes_dict['nodes']):
-        if idx == parent_index:
-            continue
-        else:
-            links_dict['links'].append({"source":idx,"target":parent_index})
-
+    try:
+        # find parent's index
+        parent_index = nodes_dict['nodes'].index(dict([item for item in nodes_dict['nodes'] if item['url']==parent_url][0]))
+        # connect all children with this parent index
+        for idx, item in enumerate(nodes_dict['nodes']):
+            if idx == parent_index:
+                continue
+            else:
+                links_dict['links'].append({"source":idx,"target":parent_index})
+    except Exception as e:
+        print(e)
+        return -1
+	
 def get_recommendations(soup):
     recommendations = []
     # find all see also links
@@ -307,4 +315,4 @@ def get_post_javascript_switch_data():
     return jsdata
 	
 if __name__ == '__main__':
-	app.run(debug=True)
+	app.run(debug=False)
