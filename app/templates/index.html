@@ -107,6 +107,12 @@
 		$.post( "/switch", {
 			javascript_data: site 
 		});
+		var svg2 = d3.select("svg > g");
+		if(svg2.empty()){
+			console.log("NO SVG exists for now");
+		}else{
+			d3.select("svg").remove();
+		}
 	}
 	function runQuery(){
 		var sQuery = document.getElementById("query").value;

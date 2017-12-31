@@ -8,6 +8,63 @@ nodes_dict = {"nodes":[]}
 links_dict = {"links":[]}
 current_group_number = 0
 
+def get_recommendations_yt(soup):
+    recommendations = []
+    try:
+        # temporary list to save side bar
+        myl = soup.select('li[class="video-list-item related-list-item show-video-time related-list-item-compact-video"] a')
+        # skip by one item to avoid duplicate entry
+        for item in myl[::2]:
+		    # keep title length to 30 characters to maintain readability
+            recommendations.append([item.get("title")[:30],"https://www.youtube.com"+item.get("href")])
+    except Exception as e:
+        print(e)
+        return -1
+    return recommendations[:4]
+
+def search_on_yt(search):
+    parent_title = ""
+    parent_url = ""
+    try:
+        # search text on youtube
+        resp = requests.get("https://www.youtube.com/results?search_query="+search)
+        # if failed for some reason
+        if resp.status_code != 200:
+            print("Couldn't search the query on Youtube")
+            return (-1,-1,-1)
+	
+        # make soup of the result
+        soup= bs(resp.text,'lxml')
+        
+        # Take first search result as the parent node
+        for item in soup.select("div[class='yt-lockup-content'] a"):
+            if item.get("href").startswith("/watch?v="):
+                parent_title = item.get("title")
+                parent_url = "https://www.youtube.com"+item.get("href")
+                break
+        
+        # open parent link and look for recommenations in the side bar
+        resp = requests.get(parent_url)
+        if resp.status_code != 200:
+            print("Couldn't search the query on Youtube")
+            return (-1,-1,-1)
+        soup = bs(resp.text,'lxml')
+        # pass this soup to another function to read recommendations
+        retval = get_recommendations_yt(soup)
+        
+        if retval == -1:
+            print("Couldn't figure out the Youtube recommendation links")
+            return (-1,-1,-1)
+        else:
+            print("recommendations are:", "(Total: "+str(len(retval))+")")
+            print(retval)
+            print("for parent: "+parent_title)
+            print(parent_url)
+            return (parent_title,parent_url,retval)
+    except Exception as e:
+        print(e)
+        return (-1,-1,-1)
+
 def appends_nodes_and_links(parent_url,recommendations):
     # clear any prior nodes information
     global nodes_dict, links_dict, current_group_number
@@ -198,6 +255,14 @@ def get_post_javascript_search_data():
 			crate_nodes_and_links(parent_title,parent_url,recommendations)
 		jsdata = {**nodes_dict,**links_dict}
 		print(jsonify(jsdata))
+	elif current_engine == 'Youtube':
+		parent_title, parent_url, recommendations = search_on_yt(jsdata)
+		if parent_title==-1:
+			print("Operation failed")
+		else:
+			crate_nodes_and_links(parent_title,parent_url,recommendations)
+		jsdata = {**nodes_dict,**links_dict}
+		print(jsonify(jsdata))
 	return jsonify(jsdata)
 
 @app.route('/expand', methods = ['POST'])
@@ -215,16 +280,31 @@ def get_post_javascript_expand_data():
 			appends_nodes_and_links(parent_url,recommendations)
 		jsdata = {**nodes_dict,**links_dict}
 		print(jsonify(jsdata))
+	elif current_engine == 'Youtube':
+		resp = requests.get(jsdata)
+		soup= bs(resp.text,'lxml')
+		recommendations = get_recommendations_yt(soup)
+		if recommendations==-1:
+			print("Operation failed")
+		else:
+			appends_nodes_and_links(parent_url,recommendations)
+		jsdata = {**nodes_dict,**links_dict}
+		print(jsonify(jsdata))
 	return jsonify(jsdata)
 
 @app.route('/switch', methods = ['POST'])
 def get_post_javascript_switch_data():
-	global current_engine
-	jsdata = request.form['javascript_data']
-	if jsdata != current_engine:
-		current_engine = jsdata
-	print("Current search engine is ", current_engine)
-	return jsdata
+    # clear any prior nodes information
+    global current_engine, nodes_dict, links_dict, current_group_number
+    nodes_dict = {"nodes":[]}
+    current_group_number = 0
+    links_dict = {"links":[]}
+    
+    jsdata = request.form['javascript_data']
+    if jsdata != current_engine:
+        current_engine = jsdata
+    print("Current search engine is ", current_engine)
+    return jsdata
 	
 if __name__ == '__main__':
 	app.run(debug=True)
