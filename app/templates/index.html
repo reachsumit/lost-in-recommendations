@@ -5,7 +5,7 @@
 
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="description" content="">
     <meta name="author" content="">
 	
@@ -51,18 +51,15 @@
 
     <!-- Navigation -->
     <nav id="mainNav" class="navbar navbar-default navbar-fixed-top navbar-custom">
-        <div class="container">
+        <div class="container"  style="display: flex;flex-flow: row wrap;justify-content: space-around;">
             <!-- Brand and toggle get grouped for better mobile display -->
             <div class="navbar-header page-scroll">
-                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
-                    <span class="sr-only">Toggle navigation</span> Menu <i class="fa fa-bars"></i>
-                </button>
-                <a class="navbar-brand" href="#page-top">Let's Explore!</a>
-				<div class="wrapper" style="float: right;padding: 5px;border: 2px;margin-top: 8px;margin-right: 5px;font-size: 17px;margin-left: 300px;display:inline-block;">
-				
+                
+				<div class="wrapper" style="border: 1px;margin-right:50px;font-size: 17px;  width: 100%;text-align: center;">
+				<a class="navbar-brand" href="#page-top">Let's Explore!</a>
 				<input placeholder="Search.." type="search" id="query" onsearch="runQuery()">
 				<button onclick="runQuery()" id="searchbutton"><i class="fa fa-search"></i></button>
-				<select style="height: 34px;width: 240px;margin-left: 360px;" id="website" onchange="changeWebsite()">
+				<select style="height: 34px;margin:0 auto;width: 240px;margin-top:3px;" id="website" onchange="changeWebsite()">
 						<option selected>Wikipedia</option>
 						<option>Youtube</option>
 					</select>
@@ -143,6 +140,7 @@
 				<script>
 				function refreshSVG(json){
 				console.log("REFRESH");
+				console.log($(window).width()>750?75:35)
 				var type = "Wikipedia"
 				jQuery.ajaxSetup({async:false});
 				$.get("/knowType", function(data) {
@@ -161,11 +159,11 @@
 				svg.selectAll("*").remove();
 				var force = d3.layout.force()
 					.gravity(0.05)
-					.distance(200)
-					.charge(-500)
+					.distance(function(){ return $(window).width()>750?200:100})
+					.charge(-$(window).width()/5)
 					.size([width, height]);
 				<!-- var x = "{{ jsdata }}".replace(/&#39;/g,'"') -->
-				<!-- var json = JSON.parse(x) -->
+				<!-- var json = JSON.parse(x) --> 
 				console.log(json)
 				  force
 					  .nodes(json.nodes)
@@ -185,8 +183,8 @@
 					  .attr("x", -8)
 					  .attr("y", -8)
 					  .attr("class", "wiki")
-					  .attr("width", 50)
-					  .attr("height", 50);
+					  .attr("width", function(){ return $(window).width()>750?75:35})
+					  .attr("height", function(){ return $(window).width()>750?75:35});
 					  
 				  node.append("text")
 					  .attr("dx", 12)
@@ -202,7 +200,9 @@
 						.attr("y1", function(d) { return d.source.y; })
 						.attr("x2", function(d) { return d.target.x; })
 						.attr("y2", function(d) { return d.target.y; });
-					node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+					node.attr("cx", function(d) { return d.x = Math.max(50, Math.min($(window).width() - 200, d.x)); })
+						.attr("cy", function(d) { return d.y = Math.max(100, Math.min($(window).height() - 100, d.y)); })
+					.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 				  });
 				  }
 				  function expand(url){
