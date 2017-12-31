@@ -159,7 +159,7 @@
 				svg.selectAll("*").remove();
 				var force = d3.layout.force()
 					.gravity(0.05)
-					.distance(function(){ return $(window).width()>750?600:400})
+					.distance(function(){ return $(window).width()>750?250:150})
 					.charge(-500)
 					.size([width, height]);
 				<!-- var x = "{{ jsdata }}".replace(/&#39;/g,'"') -->
