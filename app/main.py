@@ -8,7 +8,7 @@ nodes_dict = {"nodes":[]}
 links_dict = {"links":[]}
 current_group_number = 0
 
-def appends_nodes_and_links(parent_title,parent_url,recommendations):
+def appends_nodes_and_links(parent_url,recommendations):
     # clear any prior nodes information
     global nodes_dict, links_dict, current_group_number
     
@@ -170,6 +170,12 @@ def home():
 	jsdata = json.load(open('static/test.json'))
 	return render_template('index.html',jsdata=jsdata)
 
+@app.route('/knowType', methods = ['GET'])
+def get_post_javascript_knowType_data():
+	global current_engine
+	jsdata = {"engine":current_engine}
+	return jsonify(jsdata)
+
 @app.route('/search', methods = ['POST'])
 def get_post_javascript_search_data():
 	global current_engine
@@ -181,22 +187,25 @@ def get_post_javascript_search_data():
 			print("Operation failed")
 		else:
 			crate_nodes_and_links(parent_title,parent_url,recommendations)
-			jsdata = {**nodes_dict,**links_dict}
-			print(jsonify(jsdata))
+		jsdata = {**nodes_dict,**links_dict}
+		print(jsonify(jsdata))
 	return jsonify(jsdata)
 
 @app.route('/expand', methods = ['POST'])
 def get_post_javascript_expand_data():
 	jsdata = request.form['javascript_data']
 	print("Got this: ",jsdata,type(jsdata))
+	parent_url = jsdata
 	if current_engine == 'Wikipedia':
-		parent_title, parent_url, recommendations = search_on_wiki(jsdata)
-		if parent_title==-1:
+		resp = requests.get(jsdata)
+		soup= bs(resp.text,'lxml')
+		recommendations = get_recommendations(soup)
+		if recommendations==-1:
 			print("Operation failed")
 		else:
-			appends_nodes_and_links(parent_title,parent_url,recommendations)
-			jsdata = {**nodes_dict,**links_dict}
-			print(jsonify(jsdata))
+			appends_nodes_and_links(parent_url,recommendations)
+		jsdata = {**nodes_dict,**links_dict}
+		print(jsonify(jsdata))
 	return jsonify(jsdata)
 
 @app.route('/switch', methods = ['POST'])

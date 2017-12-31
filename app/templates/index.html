@@ -137,6 +137,16 @@
 				<script>
 				function refreshSVG(json){
 				console.log("REFRESH");
+				var type = "Youtube"
+				jQuery.ajaxSetup({async:false});
+				$.get("/knowType", function(data) {
+					console.log("Server sent: "+data.engine)
+					console.log("I have: "+type)
+					type = data.engine
+					console.log("Changed type is: "+type)
+				});
+				console.log("Final type is "+type);
+				jQuery.ajaxSetup({async:true});
 				var width = 960,
 					height = 620
 				var svg = d3.select(".col-lg-12").append("svg")
@@ -165,7 +175,7 @@
 					  .attr("class", "nodes")
 					  .call(force.drag);
 				  node.append("image")
-					  .attr("xlink:href", "{{ url_for('static', filename='icons/yt.ico') }}")
+					  .attr("xlink:href", function(){ return type=='Wikipedia' ? "{{ url_for('static', filename='icons/wiki.ico') }}" : "{{ url_for('static', filename='icons/yt.ico') }}" })
 					  .attr("x", -8)
 					  .attr("y", -8)
 					  .attr("class", "wiki")
@@ -179,7 +189,7 @@
 				 node.on("click",function(d){
 					console.log("clicked", d.name);
 					d3.select("svg").remove();
-					expand(d.name);
+					expand(d.url);
 				  });
 				  force.on("tick", function() {
 					link.attr("x1", function(d) { return d.source.x; })
@@ -189,14 +199,21 @@
 					node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 				  });
 				  }
-				  function expand(name){
+				  function expand(url){
 					$.post( "/expand", {
-						javascript_data: name 
+						javascript_data: url 
 					},
 					function(data,status){
 						<!-- alert("Data: " + data + "\nStatus: " + status); -->
 						<!-- refreshSVG(JSON.stringify(data)) -->
-						console.log("data: "+data+" and status: "+status);
+						<!-- console.log("data: "+data+" and status: "+status); -->
+						var svg2 = d3.select("svg > g");
+						if(svg2.empty()){
+							console.log("NO SVG exists for now");
+						}else{
+							d3.select("svg").remove();
+						}
+						refreshSVG(data)
 					});
 				  }
 				</script>
