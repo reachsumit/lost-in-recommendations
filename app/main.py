@@ -1,4 +1,4 @@
-from flask import Flask,render_template,request,jsonify
+from flask import Flask,render_template,request,jsonify,request,make_response
 import json,requests
 from bs4 import BeautifulSoup as bs
 app = Flask(__name__)
@@ -242,17 +242,29 @@ def search_on_wiki(search):
 @app.route('/')
 def home():
 	jsdata = json.load(open('static/test.json'))
-	return render_template('index.html',jsdata=jsdata)
+	resp = make_response(render_template('index.html',jsdata=jsdata))
+	resp.set_cookie('engine', 'Wikipedia') 
+	return resp
 
 @app.route('/knowType', methods = ['GET'])
 def get_post_javascript_knowType_data():
-	global current_engine
-	jsdata = {"engine":current_engine}
-	return jsonify(jsdata)
+    global current_engine
+    jsdata = {"engine":current_engine}
+    eng = request.cookies.get('engine')
+    if eng:
+        print("engine stored in cookies is: ",eng)
+        current_engine = eng
+        jsdata = {"engine":eng}
+        return jsonify(jsdata)
+    else:
+        return jsonify(jsdata)
 
 @app.route('/search', methods = ['POST'])
 def get_post_javascript_search_data():
 	global current_engine
+	eng = request.cookies.get('engine')
+	if eng:
+		current_engine = eng
 	jsdata = request.form['javascript_data']
 	print("Got this: ",type(jsdata))
 	if current_engine == 'Wikipedia':
@@ -275,6 +287,10 @@ def get_post_javascript_search_data():
 
 @app.route('/expand', methods = ['POST'])
 def get_post_javascript_expand_data():
+	global current_engine
+	eng = request.cookies.get('engine')
+	if eng:
+		current_engine = eng
 	jsdata = request.form['javascript_data']
 	print("Got this: ",jsdata,type(jsdata))
 	parent_url = jsdata
@@ -311,8 +327,14 @@ def get_post_javascript_switch_data():
     jsdata = request.form['javascript_data']
     if jsdata != current_engine:
         current_engine = jsdata
-    print("Current search engine is ", current_engine)
-    return jsdata
+    print("Current search engine is ", jsdata)
+    #return jsdata
+    #resp = make_response(render_template('index.html',jsdata=jsdata))
+	#resp.set_cookie('engine', 'Wikipedia') 
+	#return resp
+    resp = make_response(render_template('index.html',jsdata=jsdata))
+    resp.set_cookie('engine', jsdata) 
+    return resp
 	
 if __name__ == '__main__':
 	app.run(debug=False)
