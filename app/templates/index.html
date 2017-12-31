@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
+	
 
     <title>Lost in Recommondations | Home</title>
 
@@ -112,7 +113,18 @@
 		console.log("You searched for: "+sQuery)
 		$.post( "/search", {
 			javascript_data: sQuery 
-		});
+		},
+        function(data,status){
+            <!-- alert("Data: " + data + "\nStatus: " + status); -->
+			<!-- refreshSVG(JSON.stringify(data)) -->
+			var svg2 = d3.select("svg > g");
+			if(svg2.empty()){
+			console.log("NO SVG exists for now");
+			}else{
+			d3.select("svg").remove();
+			}
+			refreshSVG(data)
+        });
 	}
 	</script>
 
@@ -123,18 +135,22 @@
                 <div class="col-lg-12" style="height: 500px;">
                 <script src="https://d3js.org/d3.v3.js"></script>
 				<script>
+				function refreshSVG(json){
+				console.log("REFRESH");
 				var width = 960,
 					height = 620
 				var svg = d3.select(".col-lg-12").append("svg")
 					.attr("width", "100%")
 					.attr("height", height);
+				svg.selectAll("*").remove();
 				var force = d3.layout.force()
 					.gravity(0.05)
 					.distance(100)
 					.charge(-100)
 					.size([width, height]);
-				var x = "{{ jsdata }}".replace(/&#39;/g,'"')
-				var json = JSON.parse(x)
+				<!-- var x = "{{ jsdata }}".replace(/&#39;/g,'"') -->
+				<!-- var json = JSON.parse(x) -->
+				console.log(json)
 				  force
 					  .nodes(json.nodes)
 					  .links(json.links)
@@ -162,6 +178,8 @@
 					  .text(function(d) { return d.name });
 				 node.on("click",function(d){
 					console.log("clicked", d.name);
+					d3.select("svg").remove();
+					expand(d.name);
 				  });
 				  force.on("tick", function() {
 					link.attr("x1", function(d) { return d.source.x; })
@@ -170,6 +188,17 @@
 						.attr("y2", function(d) { return d.target.y; });
 					node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
 				  });
+				  }
+				  function expand(name){
+					$.post( "/expand", {
+						javascript_data: name 
+					},
+					function(data,status){
+						<!-- alert("Data: " + data + "\nStatus: " + status); -->
+						<!-- refreshSVG(JSON.stringify(data)) -->
+						console.log("data: "+data+" and status: "+status);
+					});
+				  }
 				</script>
                 </div>
             </div>
