@@ -22,6 +22,9 @@ def appends_nodes_and_links(parent_url,recommendations):
         node['name'] = recomm[0]
         node['url'] = recomm[1]
         node['group'] = current_group_number
+        # check if this node already exists
+        if [item for item in nodes_dict['nodes'] if item['url']==node['url']]:
+            continue
         nodes_dict["nodes"].append(node)
 
     # find parent's index
@@ -75,95 +78,101 @@ def get_recommendations(soup):
     seeAll = soup.find_all(text="See also")
     # check if we are at the bottom one
     foundSeeAll = False
-    for item in seeAll:
-        # this see all is one of the main headlines
-        if item.parent.attrs['class'][0]=='mw-headline':
-            foundSeeAll = True
+    try:
+        for item in seeAll:
+            # this seeAll variable is one of the main headlines
+            if item.parent.attrs['class'][0]=='mw-headline':
+                foundSeeAll = True
+                break
+        # return error if See Also link was not found
+        if not foundSeeAll:
+            return -1
+        # get all the hyperlinks from following unordered list of references
+        #linkslist = item.parent.parent.next_sibling.next_sibling.find_all('a')
+        # fix some wiki urls have a weird box at the bottom
+        sibling = item.parent.parent.next_sibling.next_sibling
+        # make 7 attempts to jump that box
+        for i in range(7):
+            # check if recommendations list is found
+            if not sibling.name=='ul':
+                sibling = sibling.next_sibling.next_sibling
+                continue
             break
-    # return error if See Also link was not found
-    if not foundSeeAll:
+        # recommendation list couldn't be retrieved in 7 attempts
+        if i==7:
+            return -1
+        # get links out of recommendations list
+        linkslist = sibling.find_all('a')
+        # separate out the hyperlinks and titles
+        for link in linkslist:
+            # save recommendations
+            recommendations.append([link.getText(),"https://en.wikipedia.org"+link.get('href')])
+    except Exception as e:
+        print(e)
         return -1
-    # get all the hyperlinks from following unordered list of references
-    #linkslist = item.parent.parent.next_sibling.next_sibling.find_all('a')
-    # fix some wiki urls have a weird box at the bottom
-    sibling = item.parent.parent.next_sibling.next_sibling
-    # make 7 attempts to jump that box
-    for i in range(7):
-        # check if recommendations list is found
-        if not sibling.name=='ul':
-            sibling = sibling.next_sibling.next_sibling
-            continue
-        break
-    # recommendation list couldn't be retrieved in 7 attempts
-    if i==7:
-        return -1
-    # get links out of recommendations list
-    linkslist = sibling.find_all('a')
-    # separate out the hyperlinks and titles
-    for link in linkslist:
-        # save recommendations
-        recommendations.append([link.getText(),"https://en.wikipedia.org"+link.get('href')])
     return recommendations
 
 def search_on_wiki(search):
     parent_title = ""
     parent_url = ""
-    
-    # search text on wikipedia
-    resp = requests.get("https://en.wikipedia.org/w/index.php?search="+search)
-    # if failed for some reason
-    if resp.status_code != 200:
-        print("Couldn't search the query on Wikipedia")
-        return (-1,-1,-1)
-    
-    # make soup of the result
-    soup= bs(resp.text,'lxml')
-        
-    # This is the direct article page
-    if len(soup.select("li[id='ca-nstab-main']")):
-        # save first heading as parent's title
-        parent_title = soup.select("h1[id='firstHeading']")[0].getText()
-        # save the search url as the parent's url
-        #parent_url = "https://en.wikipedia.org/w/index.php?search="+search.replace(" ","+")
-        # fix: save the redirected url
-        parent_url = resp.url
-        # find recommendations for this url
-        retval = get_recommendations(soup)
-    
-    # This is the search results page
-    elif len(soup.select("li[id='ca-nstab-special']")):
-        # if search didn't resul a valid result, return error
-        if not len(soup.select("ul[class='mw-search-results'] a")):
-            return (-1,-1,-1)
-        # save title from first search result
-        parent_title = soup.select("ul[class='mw-search-results'] a")[0].get("title")
-        # save url from first search result
-        parent_url = "https://en.wikipedia.org"+soup.select("ul[class='mw-search-results'] a")[0].get("href")
-        # make soup from the parent url
-        resp = requests.get(parent_url)
-        # fix: save the redirected url, if applicable
-        parent_url = resp.url
+    try:
+        # search text on wikipedia
+        resp = requests.get("https://en.wikipedia.org/w/index.php?search="+search)
+        # if failed for some reason
         if resp.status_code != 200:
             print("Couldn't search the query on Wikipedia")
             return (-1,-1,-1)
+	
+        # make soup of the result
         soup= bs(resp.text,'lxml')
-        # find children (recommendations)
-        retval = get_recommendations(soup)
+        
+        # This is the direct article page
+        if len(soup.select("li[id='ca-nstab-main']")):
+            # save first heading as parent's title
+            parent_title = soup.select("h1[id='firstHeading']")[0].getText()
+            # save the search url as the parent's url
+            #parent_url = "https://en.wikipedia.org/w/index.php?search="+search.replace(" ","+")
+            # fix: save the redirected url
+            parent_url = resp.url
+            # find recommendations for this url
+            retval = get_recommendations(soup)
     
-    # exception case
-    else:
-        print("Unknown content returned by wiki servers")
-        return (-1,-1,-1)
+        # This is the search results page
+        elif len(soup.select("li[id='ca-nstab-special']")):
+            # if search didn't resul a valid result, return error
+            if not len(soup.select("ul[class='mw-search-results'] a")):
+                return (-1,-1,-1)
+            # save title from first search result
+            parent_title = soup.select("ul[class='mw-search-results'] a")[0].get("title")
+            # save url from first search result
+            parent_url = "https://en.wikipedia.org"+soup.select("ul[class='mw-search-results'] a")[0].get("href")
+            # make soup from the parent url
+            resp = requests.get(parent_url)
+            # fix: save the redirected url, if applicable
+            parent_url = resp.url
+            if resp.status_code != 200:
+                print("Couldn't search the query on Wikipedia")
+                return (-1,-1,-1)
+            soup= bs(resp.text,'lxml')
+            # find children (recommendations)
+            retval = get_recommendations(soup)
+        # exception case
+        else:
+            print("Unknown content returned by wiki servers")
+            return (-1,-1,-1)
     
-    if retval == -1:
-        print("Couldn't figure out the recommendation links")
+        if retval == -1:
+            print("Couldn't figure out the recommendation links")
+            return (-1,-1,-1)
+        else:
+            #print("recommendations are:", "(Total: "+str(len(retval))+")")
+            #print(retval)
+            #print("for parent: "+parent_title)
+            #print(parent_url)
+            return (parent_title,parent_url,retval)
+    except Exception as e:
+        print(e)
         return (-1,-1,-1)
-    else:
-        #print("recommendations are:", "(Total: "+str(len(retval))+")")
-        #print(retval)
-        #print("for parent: "+parent_title)
-        #print(parent_url)
-        return (parent_title,parent_url,retval)
 
 @app.route('/')
 def home():
